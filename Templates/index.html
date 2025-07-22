@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GUARD MY CLICK - AI Email Scanner</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Ubuntu', sans-serif;
+      background-color: #121212;
+      color: #ffffff;
+    }
+    .container {
+      background-color: #1e1e1e;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 10px rgba(255, 0, 0, 0.5);
+    }
+    .spinner-border {
+      display: none;
+    }
+    .table-dark {
+      background-color: #222;
+    }
+    .modal-body, .modal-content {
+      color: #000;
+    }
+    .badge {
+      font-size: 0.9rem;
+    }
+    .canvas-container {
+       margin-bottom: 40px;
+     }
+
+  </style>
+</head>
+
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-danger">
+    <div class="container-fluid">
+      <a class="navbar-brand fw-bold" href="/">GUARD MY CLICK</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link active" href="/">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="/about.html">About</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mt-5" id="report-section">
+    <div class="text-center">
+      <h1 class="fw-bold display-4 text-danger">GUARD MY CLICK</h1>
+      <p class="text-warning">Automated Phishing Prevention Tool With Machine Learning Integration</p>
+    </div>
+
+    <div class="text-center mt-3">
+      <button id="scan-inbox" class="btn btn-danger w-100">⚡ Start Ethical Scan</button>
+      <div class="spinner-border text-danger mt-3" role="status" id="loader">
+        <span class="visually-hidden">Scanning...</span>
+      </div>
+    </div>
+
+    <div id="email-results" class="mt-4" style="display: none;">
+      <div class="border shadow-sm bg-dark p-4 rounded">
+        <h4 class="text-warning">📧 Email Scan Summary</h4>
+        <table class="table table-bordered table-dark mt-3">
+          <thead>
+            <tr>
+              <th>Sender</th>
+              <th>Subject</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="scan-results"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="phishing-details" class="mt-4" style="display: none;">
+      <div class="border shadow-sm bg-dark p-4 rounded">
+        <h4 class="text-warning">🔍 Detailed Phishing Analysis</h4>
+        <table class="table table-bordered table-dark mt-3">
+          <thead>
+            <tr>
+              <th>URL</th>
+              <th>ML Score</th>
+              <th>Fuzzy Score</th>
+              <th>Combined Score</th>
+              <th>Status</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody id="phishing-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="row mt-4" id="charts" style="display: none;">
+      <div class="col-md-6">
+        <canvas id="pieChart"></canvas>
+      </div>
+      <div class="col-md-6">
+        <canvas id="barChart"></canvas>
+      </div>
+    </div>
+
+    <div class="mt-4" id="per-url-analysis" style="display: none;">
+      <h4 class="text-warning">🧭 Per-URL Analysis</h4>
+      <div id="radar-charts-container" class="row"></div>
+    </div>
+    
+
+    <div class="text-center mt-4">
+      <button class="btn btn-success" onclick="downloadReport()">⬇️ Download Full Report (PDF)</button>
+    </div>
+
+    <!-- Modal for Features -->
+    <div class="modal fade" id="featuresModal" tabindex="-1" aria-labelledby="featuresModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title" id="featuresModalLabel">🧬 Extracted Features</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="modal-feature-body"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Alert for Phishing -->
+    <div class="modal fade" id="alertModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title">⚠️ Alert: Phishing Detected!</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            One or more phishing emails have been detected. Please review the scan results carefully.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- All other HTML and CSS remain the same -->
+<!-- ... (head, navbar, body structure, etc.) -->
+
+<script>
+  async function sendEmailAlert(count) {
+    await fetch('/send-email-alert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phishing_count: count })
+    });
+  }
+
+  function showBrowserNotification(count) {
+    if (Notification.permission === "granted") {
+      new Notification("⚠️ Phishing Alert", {
+        body: `${count} phishing emails detected. Please check your inbox.`
+      });
+    }
+  }
+
+  function requestNotificationPermission() {
+    if ("Notification" in window && Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
+  }
+
+  requestNotificationPermission();
+
+  document.getElementById("scan-inbox").addEventListener("click", function () {
+    const loader = document.getElementById("loader");
+    const resultsContainer = document.getElementById("email-results");
+    const phishingContainer = document.getElementById("phishing-details");
+    const chartsContainer = document.getElementById("charts");
+    const resultsTable = document.getElementById("scan-results");
+    const phishingTable = document.getElementById("phishing-table-body");
+
+    loader.style.display = "inline-block";
+    resultsContainer.style.display = "none";
+    phishingContainer.style.display = "none";
+    chartsContainer.style.display = "none";
+    resultsTable.innerHTML = "";
+    phishingTable.innerHTML = "";
+
+    fetch("/scan", { method: "POST" })
+      .then(response => response.json())
+      .then(data => {
+        loader.style.display = "none";
+        resultsContainer.style.display = "block";
+
+        let phishingData = [];
+        let phishingCount = 0;
+        let safeCount = 0;
+
+        data.forEach(email => {
+          const isPhishing = email.status.includes("Phishing");
+          const row = `
+            <tr>
+              <td>${email.sender}</td>
+              <td>${email.subject}</td>
+              <td><span class="badge ${isPhishing ? 'bg-danger' : 'bg-success'}">${email.status}</span></td>
+            </tr>`;
+          resultsTable.innerHTML += row;
+          isPhishing ? phishingCount++ : safeCount++;
+
+          if (email.risky_links) phishingData.push(...email.risky_links);
+        });
+
+        if (phishingCount > 0) {
+          const alertModal = new bootstrap.Modal(document.getElementById("alertModal"));
+          alertModal.show();
+          showBrowserNotification(phishingCount);
+          sendEmailAlert(phishingCount);
+        }
+
+        if (phishingData.length > 0) {
+          phishingContainer.style.display = "block";
+          phishingData.forEach((link, index) => {
+            const row = `
+              <tr>
+                <td>${link.URL}</td>
+                <td>${link.ML_Prediction_Score}%</td>
+                <td>${link.Fuzzy_Risk_Score}%</td>
+                <td>${link.Combined_Score}%</td>
+                <td><span class="badge ${link.Combined_Status === 'PHISHING' ? 'bg-danger' : 'bg-success'}">${link.Combined_Status}</span></td>
+                <td><button class="btn btn-sm btn-warning" onclick="showFeatures(${index})">View</button></td>
+              </tr>`;
+            phishingTable.innerHTML += row;
+          });
+          window.phishingData = phishingData;
+          drawCharts(phishingCount, safeCount, phishingData);
+        }
+      })
+      .catch(error => {
+        loader.style.display = "none";
+        console.error("Error:", error);
+      });
+  });
+
+  function drawCharts(phishing, safe, data) {
+    document.getElementById("charts").style.display = "flex";
+
+    // Pie chart
+    new Chart(document.getElementById("pieChart"), {
+      type: 'pie',
+      data: {
+        labels: ['Phishing', 'Safe'],
+        datasets: [{
+          data: [phishing, safe],
+          backgroundColor: ['#dc3545', '#198754']
+        }]
+      }
+    });
+
+    // Bar chart
+    const labels = data.map((_, i) => `URL ${i + 1}`);
+    const ml = data.map(x => x.ML_Prediction_Score);
+    const fuzzy = data.map(x => x.Fuzzy_Risk_Score);
+    const combined = data.map(x => x.Combined_Score);
+
+    new Chart(document.getElementById("barChart"), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'ML Score', backgroundColor: '#0d6efd', data: ml },
+          { label: 'Fuzzy Score', backgroundColor: '#ffc107', data: fuzzy },
+          { label: 'Combined Score', backgroundColor: '#dc3545', data: combined }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'top' } },
+        scales: { y: { beginAtZero: true, max: 100 } }
+      }
+    });
+
+    drawPerUrlCharts(data);
+  }
+
+  function drawPerUrlCharts(data) {
+    const radarContainer = document.getElementById("radar-charts-container");
+    radarContainer.innerHTML = "";
+
+    data.forEach((link, i) => {
+      const radarCanvasId = `radarChart${i}`;
+      const heatmapCanvasId = `heatmap${i}`;
+
+      const col = document.createElement("div");
+      col.className = "col-md-6 canvas-container";
+      col.innerHTML = `
+        <div class="bg-dark p-3 rounded shadow-sm">
+          <h6 class="text-info">🔗 URL ${i + 1}</h6>
+          <canvas id="${radarCanvasId}" height="200"></canvas>
+          <canvas id="${heatmapCanvasId}" height="200"></canvas>
+        </div>`;
+      radarContainer.appendChild(col);
+
+      // Radar chart
+      new Chart(document.getElementById(radarCanvasId), {
+        type: "radar",
+        data: {
+          labels: ["ML Score", "Fuzzy Score", "Combined Score"],
+          datasets: [{
+            label: 'Score Breakdown',
+            data: [
+              link.ML_Prediction_Score,
+              link.Fuzzy_Risk_Score,
+              link.Combined_Score
+            ],
+            backgroundColor: "rgba(220, 53, 69, 0.2)",
+            borderColor: "#dc3545",
+            pointBackgroundColor: "#fff",
+            pointBorderColor: "#dc3545"
+          }]
+        },
+        options: {
+          scales: {
+            r: {
+              min: 0,
+              max: 100,
+              ticks: { stepSize: 20, color: "#fff" },
+              pointLabels: { color: "#fff" },
+              grid: { color: "rgba(255,255,255,0.2)" }
+            }
+          },
+          plugins: { legend: { labels: { color: "#fff" } } }
+        }
+      });
+
+      // Heatmap (bar) chart for feature importance
+      const featLabels = Object.keys(link.Feature_Importance || {});
+      const featValues = Object.values(link.Feature_Importance || {});
+
+      if (featLabels.length && featValues.length) {
+        new Chart(document.getElementById(heatmapCanvasId), {
+          type: 'bar',
+          data: {
+            labels: featLabels,
+            datasets: [{
+              label: 'Feature Importance',
+              data: featValues,
+              backgroundColor: '#20c997'
+            }]
+          },
+          options: {
+            responsive: true,
+            indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { 
+                ticks: { color: '#fff' },
+                grid: { color: 'rgba(255,255,255,0.1)' },
+                min: 0,
+                max: 100 
+              },
+              y: { 
+                ticks: { color: '#fff' },
+                grid: { color: 'rgba(255,255,255,0.1)' }
+              }
+            }
+          }
+        });
+      } else {
+        console.warn(`No feature importance data for URL ${i + 1}`);
+      }
+    });
+
+    document.getElementById("per-url-analysis").style.display = "block";
+  }
+
+  function showFeatures(index) {
+    const featureData = window.phishingData[index].Extracted_Features;
+    const container = document.getElementById("modal-feature-body");
+    let content = "<table class='table table-bordered'><tbody>";
+    for (let [key, value] of Object.entries(featureData)) {
+      content += `<tr><td><strong>${key}</strong></td><td>${value}</td></tr>`;
+    }
+    content += "</tbody></table>";
+    container.innerHTML = content;
+
+    const modal = new bootstrap.Modal(document.getElementById("featuresModal"));
+    modal.show();
+  }
+
+  async function downloadReport() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "portrait", unit: "px", format: "a4" });
+    const reportContent = document.querySelector(".container");
+
+    await html2canvas(reportContent, { scale: 2, useCORS: true }).then(canvas => {
+      const imgData = canvas.toDataURL("image/png");
+      const imgProps = doc.getImageProperties(imgData);
+      const pdfWidth = doc.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      doc.addImage(imgData, "PNG", 10, 10, pdfWidth - 20, pdfHeight);
+      doc.save("GuardMyClick_Report.pdf");
+    });
+  }
+</script>
+
+
+
+  
+</body>
+</html>
