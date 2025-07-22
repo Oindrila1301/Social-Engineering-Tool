@@ -1,8 +1,3 @@
-# Social-Engineering-Tool
-Social engineering detection tool prototype which helps in detecting phishing attacks
-Sure! Here's a refined, professional, and GitHub-optimized version of your `README.md` content for **GUARD MY CLICK** — structured for clarity, impact, and developer appeal:
-
-
 # 🛡️ GUARD MY CLICK – AI Email Scanner
 
 **GUARD MY CLICK** is a powerful, AI-driven phishing detection system built to proactively protect users from email-based threats. By combining **machine learning** and **fuzzy logic**, this tool performs real-time, automated Gmail inbox scanning to identify and alert users of suspicious or malicious URLs embedded in emails — all with a single click.
